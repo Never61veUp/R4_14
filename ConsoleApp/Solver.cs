@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -13,7 +13,7 @@ public class Solver
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
         { "steganography", SolveSteganography },
-        { "math", SolveMath } // <-- Добавили обработчик математики
+        { "math", SolveMath }
     };
 
     public static string Solve(TaskResponse taskResponse)
@@ -30,18 +30,15 @@ public class Solver
 
         try
         {
-            // Убираем знак равенства, если он есть на конце, и лишние пробелы
             string expr = question.Replace("=", "").Trim();
 
-            // Безопасный расчет простых выражений через DataTable
             var table = new DataTable();
             table.Columns.Add("expression", typeof(string), expr);
             var row = table.NewRow();
             table.Rows.Add(row);
-
+            
             double val = double.Parse((string)row["expression"], CultureInfo.InvariantCulture);
-
-            // Округляем до 4 знаков и форматируем с точкой
+            
             string result = val.ToString("G", CultureInfo.InvariantCulture);
             Console.WriteLine($"[Math] Evaluated: {expr} = {result}");
             return result;
