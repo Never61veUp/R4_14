@@ -13,7 +13,7 @@ public class Solver
 {
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
-        { "steganography", SolveSteganography },
+        { "steganography", SteganographySolver.Solve },
         { "math", MathSolver.Solve },
         {"determinant", MatrixSolver.Solve},
         {"polynomial-root", PolynomialSolver.Solve},
