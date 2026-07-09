@@ -39,25 +39,28 @@ public class CypherSolver
     
     private static string CaesarDecode(string text, int shift)
     {
-        shift %= 26;
+        const string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789' ";
 
         var result = new StringBuilder();
 
+        shift %= alphabet.Length;
+
         foreach (var ch in text)
         {
-            if (ch >= 'a' && ch <= 'z')
+            int index = alphabet.IndexOf(ch);
+
+            if (index == -1)
             {
-                var index = ch - 'a';
-
-                index -= shift;
-
-                if (index < 0)
-                    index += 26;
-
-                result.Append((char)('a' + index));
-            }
-            else
                 result.Append(ch);
+                continue;
+            }
+
+            int newIndex = (index - shift) % alphabet.Length;
+
+            if (newIndex < 0)
+                newIndex += alphabet.Length;
+
+            result.Append(alphabet[newIndex]);
         }
 
         return result.ToString();
