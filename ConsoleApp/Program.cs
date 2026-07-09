@@ -55,7 +55,8 @@ var supportedTypes = new List<string>
     "steganography",
     "math",
     "determinant",
-    "cypher"
+    "cypher",
+    "statistics"
 };
 
 
