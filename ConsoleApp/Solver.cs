@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Challenge.DataContracts;
@@ -10,7 +12,8 @@ public class Solver
 {
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
-        { "steganography", SolveSteganography }
+        { "steganography", SolveSteganography },
+        { "math", SolveMath }
     };
 
     public static string Solve(TaskResponse taskResponse)
@@ -21,6 +24,32 @@ public class Solver
         throw new ArgumentException($"Unknown task type: {taskResponse.TypeId}");
     }
 
+    private static string SolveMath(string question)
+    {
+        if (string.IsNullOrWhiteSpace(question)) return "0";
+
+        try
+        {
+            string expr = question.Replace("=", "").Trim();
+
+            var table = new DataTable();
+            table.Columns.Add("expression", typeof(string), expr);
+            var row = table.NewRow();
+            table.Rows.Add(row);
+            
+            double val = double.Parse((string)row["expression"], CultureInfo.InvariantCulture);
+            
+            string result = val.ToString("G", CultureInfo.InvariantCulture);
+            Console.WriteLine($"[Math] Evaluated: {expr} = {result}");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Math Error] Can't solve '{question}': {ex.Message}");
+            return "error";
+        }
+    }
+
     private static string SolveSteganography(string question)
     {
         if (string.IsNullOrWhiteSpace(question))
@@ -28,13 +57,11 @@ public class Solver
 
         question = question.Trim();
 
-        // === Новая стеганография с формулой (Cypher-вариант) ===
         if (question.Contains("multiplicator") || (question.Contains('#') && question.Contains("formula")))
         {
             return SolveCypher(question);
         }
 
-        // === Классическая стеганография (индексы арабские/римские + текст книги) ===
         return SolveClassicSteganography(question);
     }
 
@@ -43,8 +70,8 @@ public class Solver
         var parts = question.Split('#');
         if (parts.Length < 3) return "error_invalid_format";
 
-        string paramsStr = parts[1];      
-        string encryptedText = parts[2];  
+        string paramsStr = parts[1];
+        string encryptedText = parts[2];
 
         int multIndex = paramsStr.IndexOf("multiplicator=");
         if (multIndex == -1) return "error_no_mult";
@@ -60,7 +87,7 @@ public class Solver
         if (bookStartIndex >= question.Length) return "error_no_book";
 
         string bookText = question.Substring(bookStartIndex).TrimStart('\r', '\n');
-        long abcLength = bookText.Length; 
+        long abcLength = bookText.Length;
 
         var decryptedChars = new char[encryptedText.Length];
 
@@ -115,7 +142,6 @@ public class Solver
         if (indexes == null || textStartIndex == -1 || textStartIndex >= lines.Length)
             return "error_no_data";
 
-        // Соединяем строки книги через родной перенос строки (\n), чтобы не сдвигать индексы
         string fullText = string.Join("\n", lines.Skip(textStartIndex));
 
         Console.WriteLine($"[DEBUG] Text length: {fullText.Length}");
