@@ -87,6 +87,7 @@ while (true)
             Console.WriteLine("----------------");
             Console.WriteLine($"Тип: {task.TypeId}");
             Console.WriteLine($"ID: {task.Id}");
+            Console.WriteLine($"Вопрос: {task.Question[..30]}");
 
             if (!supportedTypes.Contains(task.TypeId))
             {
