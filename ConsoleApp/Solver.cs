@@ -13,12 +13,13 @@ public class Solver
 {
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
-        { "steganography", SolveSteganography },
+        { "steganography", SteganographySolver.Solve },
         { "math", MathSolver.Solve },
         {"determinant", MatrixSolver.Solve},
         {"polynomial-root", PolynomialSolver.Solve},
         {"cypher", CypherSolver.Solve},
-        {"statistics", SolveStatistics}
+        {"statistics", SolveStatistics},
+        {"shape", ShapeSolver.Solve}
     };
 
     public static string Solve(TaskResponse taskResponse)
