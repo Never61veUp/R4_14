@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,74 +10,129 @@ public class PolynomialSolver
 {
     public static string Solve(string question)
     {
-        
         var polynomial = question
             .Split('\n')
             .Select(x => x.Trim())
-            .Last(x => x.Contains("x"));
+            .Last(x => x.Contains("x"))
+            .Replace(" ", "");
 
-        polynomial = polynomial.Replace(" ", "");
-        
-        var linearMatch = Regex.Match(
-            polynomial,
-            @"\(?([+-]?\d*\.?\d+)\)?\*x([+-]\(?[+-]?\d*\.?\d+\)?)"
+        var coefficients = ParsePolynomial(polynomial);
+
+        var root = FindRoot(coefficients);
+
+        if (root == null)
+            return "no roots";
+
+        return root.Value.ToString(
+            "0.##########",
+            CultureInfo.InvariantCulture
         );
+    }
+    
+    private static double[] ParsePolynomial(string polynomial)
+    {
+        polynomial = polynomial.Replace("-", "+-");
 
-        if (linearMatch.Success && !polynomial.Contains("^2"))
+        var terms = polynomial
+            .Split('+', StringSplitOptions.RemoveEmptyEntries);
+
+        var dict = new Dictionary<int, double>();
+
+        foreach (var term in terms)
         {
-            var aLinear = double.Parse(
-                linearMatch.Groups[1].Value,
-                CultureInfo.InvariantCulture
+            var match = Regex.Match(
+                term,
+                @"\(?([+-]?\d*\.?\d+)\)?(?:\*x(?:\^(\d+))?)?"
             );
 
-            var bLinear = double.Parse(
-                linearMatch.Groups[2].Value
+            if (!match.Success)
+                continue;
+
+            var coef = double.Parse(
+                match.Groups[1].Value
                     .Replace("(", "")
                     .Replace(")", ""),
                 CultureInfo.InvariantCulture
             );
 
-            var root = -bLinear / aLinear;
+            var power = 0;
 
-            return root.ToString(
-                "0.##########",
-                CultureInfo.InvariantCulture
-            );
+            if (term.Contains('x'))
+            {
+                power = 1;
+
+                if (match.Groups[2].Success)
+                    power = int.Parse(match.Groups[2].Value);
+            }
+
+            dict[power] = coef;
         }
 
-        var match = Regex.Match(
-            polynomial,
-            @"\(?([+-]?\d*\.?\d+)\)?\*x\^2\+\(?([+-]?\d*\.?\d+)\)?\*x\+\(?([+-]?\d*\.?\d+)\)?"
-        );
+        var maxPower = dict.Keys.Max();
 
-        if (!match.Success)
-            throw new ArgumentException($"Unknown polynomial format: {polynomial}");
+        var result = new double[maxPower + 1];
 
-        var a = double.Parse(
-            match.Groups[1].Value,
-            CultureInfo.InvariantCulture
-        );
+        foreach (var item in dict)
+            result[item.Key] = item.Value;
 
-        var b = double.Parse(
-            match.Groups[2].Value,
-            CultureInfo.InvariantCulture
-        );
+        return result;
+    }
+    
+    private static double Calculate(double[] c, double x)
+    {
+        double result = 0;
 
-        var c = double.Parse(
-            match.Groups[3].Value,
-            CultureInfo.InvariantCulture
-        );
+        for (var i = c.Length - 1; i >= 0; i--)
+        {
+            result = result * x + c[i];
+        }
 
-        var d = b * b - 4 * a * c;
+        return result;
+    }
+    
+    private static double? FindRoot(double[] coefficients)
+    {
+        var step = 0.5;
 
-        if (d < 0)
-            return "no roots";
-        
-        var root1 = (-b + Math.Sqrt(d)) / (2 * a);
+        double left = -100;
+        double right = 100;
 
-        return root1.ToString(
-            "0.##########",
-            CultureInfo.InvariantCulture
-        );
+        var previousX = left;
+        var previousY = Calculate(coefficients, previousX);
+
+        for (var x = left + step; x <= right; x += step)
+        {
+            var y = Calculate(coefficients, x);
+
+            if (Math.Abs(y) < 0.001)
+                return x;
+            
+            if (previousY * y < 0)
+            {
+                var a = previousX;
+                var b = x;
+
+                for (var i = 0; i < 100; i++)
+                {
+                    var mid = (a + b) / 2;
+                    var value = Calculate(coefficients, mid);
+
+                    if (Math.Abs(value) < 0.000001)
+                        return mid;
+
+                    if (Calculate(coefficients, a) * value < 0)
+                        b = mid;
+                    else
+                        a = mid;
+                }
+
+                return (a + b) / 2;
+            }
+
+            previousX = x;
+            previousY = y;
+        }
+
+        return null;
     }
 }

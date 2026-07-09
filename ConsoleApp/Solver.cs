@@ -14,6 +14,7 @@ public class Solver
     {
         {"determinant", MatrixSolver.Solve},
         {"polynomial-root", PolynomialSolver.Solve},
+        {"cypher", CypherSolver.Solve}
     };
     
     public static string Solve(TaskResponse taskResponse)
