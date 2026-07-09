@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Challenge.DataContracts;
 
 namespace ConsoleApp;
@@ -10,7 +11,8 @@ public class Solver
 {
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
-        {"determinant", SolveMatrixDet}
+        {"determinant", SolveMatrixDet},
+        {"polynomial-root", SolvePolynomialRoot}
     };
     
     public static string Solve(TaskResponse taskResponse)
@@ -19,6 +21,79 @@ public class Solver
             return solver(taskResponse.Question);
         
         throw new ArgumentException($"Unknown task type: {taskResponse.TypeId}");
+    }
+    
+    private static string SolvePolynomialRoot(string question)
+    {
+        
+        var polynomial = question
+            .Split('\n')
+            .Select(x => x.Trim())
+            .Last(x => x.Contains("x"));
+
+        polynomial = polynomial.Replace(" ", "");
+        
+        var linearMatch = Regex.Match(
+            polynomial,
+            @"\(?([+-]?\d*\.?\d+)\)?\*x([+-]\(?[+-]?\d*\.?\d+\)?)"
+        );
+
+        if (linearMatch.Success && !polynomial.Contains("^2"))
+        {
+            var aLinear = double.Parse(
+                linearMatch.Groups[1].Value,
+                CultureInfo.InvariantCulture
+            );
+
+            var bLinear = double.Parse(
+                linearMatch.Groups[2].Value
+                    .Replace("(", "")
+                    .Replace(")", ""),
+                CultureInfo.InvariantCulture
+            );
+
+            var root = -bLinear / aLinear;
+
+            return root.ToString(
+                "0.##########",
+                CultureInfo.InvariantCulture
+            );
+        }
+
+        var match = Regex.Match(
+            polynomial,
+            @"\(?([+-]?\d*\.?\d+)\)?\*x\^2\+\(?([+-]?\d*\.?\d+)\)?\*x\+\(?([+-]?\d*\.?\d+)\)?"
+        );
+
+        if (!match.Success)
+            throw new ArgumentException($"Unknown polynomial format: {polynomial}");
+
+        var a = double.Parse(
+            match.Groups[1].Value,
+            CultureInfo.InvariantCulture
+        );
+
+        var b = double.Parse(
+            match.Groups[2].Value,
+            CultureInfo.InvariantCulture
+        );
+
+        var c = double.Parse(
+            match.Groups[3].Value,
+            CultureInfo.InvariantCulture
+        );
+
+        var d = b * b - 4 * a * c;
+
+        if (d < 0)
+            return "no roots";
+        
+        var root1 = (-b + Math.Sqrt(d)) / (2 * a);
+
+        return root1.ToString(
+            "0.##########",
+            CultureInfo.InvariantCulture
+        );
     }
     
     private static string SolveMatrixDet(string question)
