@@ -30,7 +30,7 @@ Console.WriteLine();
 Console.WriteLine("----------------");
 Console.WriteLine();
 
-const string taskType = "determinant";
+const string taskType = "steganography";
 
 var utcNow = DateTime.UtcNow;
 string currentRound = null;
