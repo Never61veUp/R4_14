@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Challenge.DataContracts;
+using ConsoleApp.Solvers;
 
 namespace ConsoleApp;
 
@@ -13,7 +14,10 @@ public class Solver
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
         { "steganography", SolveSteganography },
-        { "math", SolveMath }
+        { "math", SolveMath },
+        {"determinant", MatrixSolver.Solve},
+        {"polynomial-root", PolynomialSolver.Solve},
+        {"cypher", CypherSolver.Solve}
     };
 
     public static string Solve(TaskResponse taskResponse)
