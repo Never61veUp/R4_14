@@ -56,7 +56,8 @@ var supportedTypes = new List<string>
     "math",
     "determinant",
     "cypher",
-    "statistics"
+    "statistics",
+    "shape"
 };
 
 
