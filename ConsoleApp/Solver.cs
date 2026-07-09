@@ -17,7 +17,8 @@ public class Solver
         { "math", SolveMath },
         {"determinant", MatrixSolver.Solve},
         {"polynomial-root", PolynomialSolver.Solve},
-        {"cypher", CypherSolver.Solve}
+        {"cypher", CypherSolver.Solve},
+        {"statistics", SolveStatistics}
     };
 
     public static string Solve(TaskResponse taskResponse)
@@ -180,5 +181,60 @@ public class Solver
             else { total += s1; idx++; }
         }
         return total;
+    }
+
+    private static string SolveStatistics(string question)
+    {
+        try
+        {
+            string[] parts = question.Split('|');
+            if (parts.Length != 2)
+                return "";
+            
+            string function = parts[0].Trim();
+            string numbersStr = parts[1].Trim();
+            
+            string[] numberStrings = numbersStr.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (numberStrings.Length == 0)
+                return "";
+            
+            List<double> numbers = new List<double>();
+            foreach (string numStr in numberStrings)
+            {
+                if (double.TryParse(numStr, System.Globalization.NumberStyles.Float, 
+                    System.Globalization.CultureInfo.InvariantCulture, out double num))
+                {
+                    numbers.Add(num);
+                }
+            }
+            
+            if (numbers.Count == 0)
+                return "";
+            
+            double result = 0;
+            switch (function)
+            {
+                case "max":
+                    result = numbers.Max();
+                    break;
+                case "min":
+                    result = numbers.Min();
+                    break;
+                case "sum":
+                    result = numbers.Sum();
+                    break;
+                default:
+                    return "";
+            }
+            
+            if (Math.Abs(result - Math.Round(result)) < 0.000001)
+                return ((int)result).ToString();
+            else
+                return result.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (Exception)
+        {
+            return "";
+        }
     }
 }
