@@ -123,7 +123,7 @@ while (true)
             Console.WriteLine("----------------");
             Console.WriteLine($"Тип: {task.TypeId}");
             Console.WriteLine($"ID: {task.Id}");
-            Console.WriteLine($"Вопрос: {task.Question[..30]}");
+            Console.WriteLine($"Вопрос: {task.Question[..Math.Min(30, task.Question.Length)]}");
 
             if (!supportedTypes.Contains(task.TypeId))
             {
