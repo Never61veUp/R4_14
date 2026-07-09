@@ -34,7 +34,51 @@ public class CypherSolver
             return CaesarDecode(message, shift);
         }
         
+        var vigenere = Regex.Match(
+            hint,
+            @"Vigenere's code=([a-z0-9']+)",
+            RegexOptions.IgnoreCase
+        );
+
+        if (vigenere.Success)
+        {
+            var key = vigenere.Groups[1].Value;
+            return VigenereDecode(message, key);
+        }
+        
         throw new Exception($"Unknown cipher {hint}");
+    }
+    
+    private static string VigenereDecode(string text, string key)
+    {
+        const string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789' ";
+
+        var result = new StringBuilder();
+
+        for (int i = 0; i < text.Length; i++)
+        {
+            var encryptedIndex = alphabet.IndexOf(text[i]);
+
+            if (encryptedIndex == -1)
+            {
+                result.Append(text[i]);
+                continue;
+            }
+
+            var keyIndex = alphabet.IndexOf(key[i % key.Length]);
+
+            if (keyIndex == -1)
+                throw new Exception($"Unknown key char: {key[i % key.Length]}");
+
+            var originalIndex = (encryptedIndex - keyIndex) % alphabet.Length;
+
+            if (originalIndex < 0)
+                originalIndex += alphabet.Length;
+
+            result.Append(alphabet[originalIndex]);
+        }
+
+        return result.ToString();
     }
     
     private static string CaesarDecode(string text, int shift)
@@ -47,7 +91,7 @@ public class CypherSolver
 
         foreach (var ch in text)
         {
-            int index = alphabet.IndexOf(ch);
+            var index = alphabet.IndexOf(ch);
 
             if (index == -1)
             {
@@ -55,7 +99,7 @@ public class CypherSolver
                 continue;
             }
 
-            int newIndex = (index - shift) % alphabet.Length;
+            var newIndex = (index - shift) % alphabet.Length;
 
             if (newIndex < 0)
                 newIndex += alphabet.Length;

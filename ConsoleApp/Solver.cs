@@ -14,7 +14,7 @@ public class Solver
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
         { "steganography", SolveSteganography },
-        { "math", SolveMath },
+        { "math", MathSolver.Solve },
         {"determinant", MatrixSolver.Solve},
         {"polynomial-root", PolynomialSolver.Solve},
         {"cypher", CypherSolver.Solve}
