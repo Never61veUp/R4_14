@@ -49,7 +49,7 @@ var mode = Console.ReadLine() == "2"
     ? RunMode.SolvePending
     : RunMode.AcceptAndSolve;
 
-var supportedTypes = new HashSet<string>
+var supportedTypes = new List<string>
 {
     "polynomial-root",
     "steganography",
@@ -58,6 +58,35 @@ var supportedTypes = new HashSet<string>
     "cypher"
 };
 
+
+string selectedType = null;
+
+if (mode == RunMode.SolvePending)
+{
+    Console.WriteLine();
+    Console.WriteLine("Выберите тип принятых задач:");
+    Console.WriteLine("0 - Все типы");
+
+    var types = supportedTypes.ToList();
+
+    for (int i = 0; i < types.Count; i++)
+    {
+        Console.WriteLine($"{i + 1} - {types[i]}");
+    }
+
+    Console.Write("> ");
+
+    var typeChoice = Console.ReadLine();
+
+    if (typeChoice != "0" &&
+        int.TryParse(typeChoice, out var index) &&
+        index > 0 &&
+        index <= types.Count)
+    {
+        selectedType = types[index - 1];
+    }
+}
+
 var solved = 0;
 var failed = 0;
 
@@ -65,13 +94,19 @@ var failed = 0;
 while (true)
     try
     {
-        List<TaskResponse> tasks = new();
+        List<TaskResponse> tasks = [];
 
         if (mode == RunMode.AcceptAndSolve)
             tasks.Add(
                 await challengeClient.AskNewTaskAsync(currentRound));
         else
-            foreach (var type in supportedTypes)
+        {
+            IEnumerable<string> typesToSolve = selectedType == null
+                ? supportedTypes
+                : new[] { selectedType };
+
+
+            foreach (var type in typesToSolve)
             {
                 var taskList = await challengeClient.GetTasksAsync(
                     currentRound,
@@ -80,6 +115,7 @@ while (true)
 
                 tasks.AddRange(taskList);
             }
+        }
 
         foreach (var task in tasks)
         {
