@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Challenge.DataContracts;
 
 namespace ConsoleApp;
@@ -9,7 +12,8 @@ public class Solver
 {
     private static readonly Dictionary<string, Func<string, string>> Solvers = new()
     {
-        { "steganography", SolveSteganography }
+        { "steganography", SolveSteganography },
+        { "math", SolveMath } // <-- Добавили обработчик математики
     };
 
     public static string Solve(TaskResponse taskResponse)
@@ -20,6 +24,35 @@ public class Solver
         throw new ArgumentException($"Unknown task type: {taskResponse.TypeId}");
     }
 
+    private static string SolveMath(string question)
+    {
+        if (string.IsNullOrWhiteSpace(question)) return "0";
+
+        try
+        {
+            // Убираем знак равенства, если он есть на конце, и лишние пробелы
+            string expr = question.Replace("=", "").Trim();
+
+            // Безопасный расчет простых выражений через DataTable
+            var table = new DataTable();
+            table.Columns.Add("expression", typeof(string), expr);
+            var row = table.NewRow();
+            table.Rows.Add(row);
+
+            double val = double.Parse((string)row["expression"], CultureInfo.InvariantCulture);
+
+            // Округляем до 4 знаков и форматируем с точкой
+            string result = val.ToString("G", CultureInfo.InvariantCulture);
+            Console.WriteLine($"[Math] Evaluated: {expr} = {result}");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Math Error] Can't solve '{question}': {ex.Message}");
+            return "error";
+        }
+    }
+
     private static string SolveSteganography(string question)
     {
         if (string.IsNullOrWhiteSpace(question))
@@ -27,13 +60,11 @@ public class Solver
 
         question = question.Trim();
 
-        // === Новая стеганография с формулой (Cypher-вариант) ===
         if (question.Contains("multiplicator") || (question.Contains('#') && question.Contains("formula")))
         {
             return SolveCypher(question);
         }
 
-        // === Классическая стеганография (индексы арабские/римские + текст книги) ===
         return SolveClassicSteganography(question);
     }
 
@@ -42,10 +73,9 @@ public class Solver
         var parts = question.Split('#');
         if (parts.Length < 3) return "error_invalid_format";
 
-        string paramsStr = parts[1];      // "prime multiplicator=5839..."
-        string encryptedText = parts[2];  // "a1ysw7kn2w'..."
+        string paramsStr = parts[1];
+        string encryptedText = parts[2];
 
-        // Достаем мультипликатор
         int multIndex = paramsStr.IndexOf("multiplicator=");
         if (multIndex == -1) return "error_no_mult";
 
@@ -56,18 +86,16 @@ public class Solver
         if (!long.TryParse(multStr, out long multiplicator))
             return "error_invalid_mult";
 
-        // Книга идет после зашифрованного текста и решеток
         int bookStartIndex = question.IndexOf(encryptedText) + encryptedText.Length;
         if (bookStartIndex >= question.Length) return "error_no_book";
 
         string bookText = question.Substring(bookStartIndex).TrimStart('\r', '\n');
-        long abcLength = bookText.Length; // Это |ABC| из формулы
+        long abcLength = bookText.Length;
 
         var decryptedChars = new char[encryptedText.Length];
 
         for (int charIndex = 0; charIndex < encryptedText.Length; charIndex++)
         {
-            // Формула: (multiplicator * (charIndex + 1)) % (|ABC| + 1) - 1
             long targetIndex = (multiplicator * (charIndex + 1L)) % (abcLength + 1) - 1;
 
             if (targetIndex >= 0 && targetIndex < bookText.Length)
@@ -90,10 +118,9 @@ public class Solver
         var lines = question.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 
         int[] indexes = null;
-        string fullText = "";
+        int textStartIndex = -1;
 
-        // Регулярка для проверки римских чисел (символы I, V, X, L, C, D, M)
-        var romanRegex = new System.Text.RegularExpressions.Regex(@"^[IVXLCDM]+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var romanRegex = new Regex(@"^[IVXLCDM]+$", RegexOptions.IgnoreCase);
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -102,7 +129,6 @@ public class Solver
 
             var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
 
-            // Проверяем строку: токенов должно быть несколько, и каждый — либо арабское число, либо римское
             if (parts.Length > 2 && parts.All(p => int.TryParse(p, out _) || romanRegex.IsMatch(p)))
             {
                 indexes = parts.Select(p =>
@@ -111,20 +137,15 @@ public class Solver
                     return RomanToArabic(p.ToUpper());
                 }).ToArray();
 
-                // Собираем оставшийся текст книги
-                fullText = string.Join(" ", lines.Skip(i + 1)
-                    .Select(l => l.Trim())
-                    .Where(l => !string.IsNullOrWhiteSpace(l)));
-
+                textStartIndex = i + 1;
                 break;
             }
         }
 
-        if (indexes == null || string.IsNullOrEmpty(fullText))
+        if (indexes == null || textStartIndex == -1 || textStartIndex >= lines.Length)
             return "error_no_data";
 
-        // Стандартизируем пробелы в тексте книги
-        fullText = System.Text.RegularExpressions.Regex.Replace(fullText, @"\s+", " ").Trim();
+        string fullText = string.Join("\n", lines.Skip(textStartIndex));
 
         Console.WriteLine($"[DEBUG] Text length: {fullText.Length}");
 
@@ -137,7 +158,7 @@ public class Solver
                 result.Append('?');
         }
 
-        string answer = result.ToString().Trim();
+        string answer = result.ToString();
         Console.WriteLine($"[Classic Stego] Extracted: '{answer}'");
         return answer;
     }
